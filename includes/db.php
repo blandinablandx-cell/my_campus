@@ -1,17 +1,19 @@
 <?php
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "my_campus";
+$host = getenv('MYSQLHOST') ?:'localhost';
+$username = getenv('MYSQLUSER') ?:'root';
+$password_db = getenv('MYSQLPASSWORD') ?:'';
+$database = getenv('MYSQLDATABASE') ?:'student_management3';
+$port =(int) getenv('MYSQLPORT') ?: 3306;
 
-// Tengeneza muunganisho wa database
-$conn = new mysqli($host, $user, $pass, $dbname);
-
-// Angalia kama kuna tatizo la kuunganisha
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+$conn =mysqli_init();
+if (getenv('MYSQLHOST')) {
+    mysqli_set_charset($conn,'NULL','NULL', 'NULL', 'NULL', 'NULL');\
+    $flags = MYSQLI_CLIENT_SSL;
+} else {
+    $flags = 0;
 }
-
-// Weka aina ya herufi kuwa utf8mb4
-$conn->set_charset("utf8mb4");
+mysqli_real_connect($conn, $host, $username_db, $password_db, $database, $port, NULL, $flags);
+if (mysqli_connect_errno()) {
+    die("failed to connect: " . $conn->connect_error );
+}
 ?>
