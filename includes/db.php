@@ -1,19 +1,29 @@
 <?php
-$host = getenv('MYSQLHOST') ?:'localhost';
-$username = getenv('MYSQLUSER') ?:'root';
-$password_db = getenv('MYSQLPASSWORD') ?:'';
-$database = getenv('MYSQLDATABASE') ?:'student_management3';
-$port =(int) getenv('MYSQLPORT') ?: 3306;
+$host = getenv('MYSQLHOST') ? getenv('MYSQLHOST') : 'localhost';
+$username = getenv('MYSQLUSER') ? getenv('MYSQLUSER') : 'root';
+$password_db = getenv('MYSQLPASSWORD') ? getenv('MYSQLPASSWORD') : '';
+$database = getenv('MYSQLDATABASE') ? getenv('MYSQLDATABASE') : 'student_management3';
+$port = (int) (getenv('MYSQLPORT') ? getenv('MYSQLPORT') : 3306);
 
-$conn =mysqli_init();
+// Anzisha muunganisho wa mysqli
+$conn = mysqli_init();
+
+// Weka SSL flags kama upo mtandaoni (kama Render au cloud DB inayohitaji SSL)
+$flags = 0;
 if (getenv('MYSQLHOST')) {
-    mysqli_set_charset($conn,'NULL','NULL', 'NULL', 'NULL', 'NULL');\
     $flags = MYSQLI_CLIENT_SSL;
-} else {
-    $flags = 0;
 }
-mysqli_real_connect($conn, $host, $username_db, $password_db, $database, $port, NULL, $flags);
+
+// Unganisha na database
+mysqli_real_connect($conn, $host, $username, $password_db, $database, $port, NULL, $flags);
+
+// Hakikisha character set ni UTF-8 ili kuzuia matatizo ya maandishi (kama lugha za kipekee au emoji)
+if ($conn) {
+    mysqli_set_charset($conn, 'utf8mb4');
+}
+
+// Angalia kama kuna tatizo la muunganisho
 if (mysqli_connect_errno()) {
-    die("failed to connect: " . $conn->connect_error );
+    die("Failed to connect: " . mysqli_connect_error());
 }
 ?>
