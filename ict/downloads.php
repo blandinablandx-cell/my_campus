@@ -1,16 +1,22 @@
 <?php
 session_start();
 
-// Njia ya kwenda kwenye folda inayohifadhi nyaraka (Unaweza kuunda folda inayoitwa 'docs' ndani ya folda ya 'ict')
+// Njia ya kwenda kwenye folda inayohifadhi nyaraka kutoka ndani ya folda ya ict
 $docs_folder = "../assets/docs/";
 
-// Kama folda haipo, itengeneze kiotomatiki
+// 1. Kinga ya mkdir: Jaribu kutengeneza folda kwa utulivu bila kusimamisha mfumo (kama mazingira yataruhusu)
 if (!is_dir($docs_folder)) {
-    mkdir($docs_folder, 0777, true);
+    @mkdir($docs_folder, 0777, true);
 }
 
-// Chagua mafaili yote yaliyopo kwenye hiyo folda
-$files = array_diff(scandir($docs_folder), array('.', '..'));
+// 2. Kinga ya scandir: Hakikisha folda ipo na inasomeka ndipo utafute mafaili
+$files = array();
+if (is_dir($docs_folder)) {
+    $scanned = scandir($docs_folder);
+    if ($scanned !== false) {
+        $files = array_diff($scanned, array('.', '..'));
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,12 +48,12 @@ $files = array_diff(scandir($docs_folder), array('.', '..'));
         
         <ul>
             <?php
-            if (count($files) > 0) {
+            if (!empty($files)) {
                 foreach ($files as $file) {
-                    // Epuka kusoma mafaili yasiyotakiwa ya mfumo kama .htaccess
+                    // Epuka kusoma mafaili yasiyotakiwa ya mfumo
                     if ($file == '.' || $file == '..') continue;
                     
-                    // Safisha jina la faili ili lionekane vizuri kwa kusoma bila alama za chini (underscores) au upanuzi (extension)
+                    // Safisha jina la faili ili lionekane vizuri
                     $file_display_name = pathinfo($file, PATHINFO_FILENAME);
                     $file_display_name = ucwords(str_replace(array('_', '-'), ' ', $file_display_name));
                     
