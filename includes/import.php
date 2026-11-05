@@ -12,7 +12,7 @@ if ($conn->connect_error) {
 }
 
 // Read your local SQL backup file
-$sql = file_get_contents('my_campus.sql');
+$sql = file_get_contents('my_campus (1).sql');
 
 if ($conn->multi_query($sql)) {
     echo "Success! Database and all tables have been imported to Render.";
