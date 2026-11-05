@@ -1,11 +1,29 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+_set('display_errors', 1);
 session_start();
 include '../includes/db.php';
 $error = "";
 
-// Tengeneza captcha namba mara ya kwanza au endapo haipo kwenye session
+// AUTOMATIC TABLE FIX: Ensure the 'users' table exists on the Render Cloud Database
+$table_check = $conn->query("SHOW TABLES LIKE 'users'");
+if ($table_check->num_rows == 0) {
+    // If it doesn't exist, create it automatically and insert a default admin account
+    $create_table = "CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        fullname VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    if ($conn->query($create_table)) {
+        $default_pass = password_hash('admin123', PASSWORD_DEFAULT);
+        $conn->query("INSERT IGNORE INTO users (username, password, role, fullname) VALUES ('admin@campus.com', '$default_pass', 'Admin', 'System Administrator')");
+    }
+}
+
+// Generate Math Captcha numbers on first load or if not set in session
 if (!isset($_SESSION['math_captcha'])) {
     $num1 = rand(1, 9);
     $num2 = rand(1, 9);
@@ -23,14 +41,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $selected_role = trim($_POST['role']);
     $user_answer = trim($_POST['captcha_answer'] ?? '');
 
-    // 1. Thibitisha Math Captcha
+    // 1. Verify Math Captcha
     if ($user_answer != $_SESSION['math_captcha']) {
         $error = "Incorrect security verification answer. Please try again.";
     } else {
-        // Safisha captcha iliyotumiwa
+        // Clear used captcha
         unset($_SESSION['math_captcha']);
 
-        // 2. Tafuta user kwenye database kupitia username
+        // 2. Look up user in the database by username
         $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -39,11 +57,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows == 1) {
             $user = $result->fetch_assoc();
 
-            // 3. Hakiki password (Inakubali password ya kawaida au iliyosimbwa)
+            // 3. Verify password (supports plain text or hashed passwords)
             $db_password = $user['password'];
             if ($password === $db_password || password_verify($password, $db_password)) {
                 
-                // 4. Hakiki kama role inafanana
+                // 4. Verify matching roles
                 $db_role = strtolower(trim($user['role'] ?? ''));
                 $selected_role_lower = strtolower(trim($selected_role));
 
@@ -52,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $_SESSION['role'] = $user['role'];
                     $_SESSION['fullname'] = $user['fullname'] ?? $user['username'];
 
-                    // 5. Elekeza mtumiaji moja kwa moja kwenye ukurasa wake kwa kutumia Njia Kamili (Absolute Path)
+                    // 5. Redirect user securely based on their role using absolute paths
                     if ($db_role == 'admin') { 
                         header("Location: /my_campus/admin/index.php"); 
                         exit(); 
@@ -64,19 +82,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         exit();
                     }
                 } else {
-                    $error = "Role mismatch! Database ina: '" . $user['role'] . "' lakini umechagua: '" . $selected_role . "'";
+                    $error = "Role mismatch! Database has: '" . $user['role'] . "' but you selected: '" . $selected_role . "'";
                 }
 
             } else {
-                $error = "Invalid password! Nenosiri uliloingiza sio sahihi.";
+                $error = "Invalid password! Please check your credentials.";
             }
         } else {
-            $error = "User not found! Jina la mtumiaji halipo kwenye mfumo.";
+            $error = "User not found! Username does not exist in the system.";
         }
         $stmt->close();
     }
 
-    // Tengeneza upya captcha endapo kutakuwa na kosa
+    // Regenerate captcha in case of an error
     $num1 = rand(1, 9);
     $num2 = rand(1, 9);
     $_SESSION['math_captcha_num1'] = $num1;
@@ -193,25 +211,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             text-align: center;
             font-size: 13px;
         }
-        .register-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #475569;
-        }
-        .register-link a {
-            color: #00b4d8;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .register-link a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
 
-    <!-- Kitufe cha kurudi nyumbani -->
     <a href="../index.php" class="home-tab">Home</a>
 
     <div class="login-container">
@@ -231,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div class="form-group">
-                <label>Role ya Mjumbe</label>
+                <label>Select Role</label>
                 <select name="role" required>
                     <option value="">Select Role</option>
                     <option value="Admin">Admin</option>
