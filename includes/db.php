@@ -22,8 +22,7 @@ if (mysqli_connect_errno()) {
     die("Failed to connect: " . mysqli_connect_error());
 }
 
-// AUTOMATIC TABLE CREATION & SEEDING:
-// Automatically builds the 'users' table and a default admin account if it doesn't exist on Render
+// ULINZI WA KIOTOMATIKI: Hakikisha jedwali la users linajiumba lenyewe kama halipo ili kuepusha Table doesn't exist error
 $conn->query("CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
@@ -33,6 +32,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
+// Weka akaunti ya kwanza ya dharura ya Admin kama hakuna mtumiaji yeyote ndani ya database hiyo ya mbali
 $check_users = $conn->query("SELECT COUNT(*) as total FROM users");
 if ($check_users) {
     $row = $check_users->fetch_assoc();
